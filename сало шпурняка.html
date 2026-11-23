@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-colour" content="#d97706">
+<title>СалоExpress — Доставка сала</title>
+</head>
+<body><div id="app"></div>
+<script>
+var TG_BOT_TOKEN = "9150687010:AAFvlT-JEJ-t-hZbzBWShC3IpilhiLZlYg8";
+var TG_CHAT_ID = "6467625038";
+
+var manifest = {
+    name: "СалоExpress",
+    short_name: "СалоExpress",
+    start_url: ".",
+    display: "standalone",background_colour: "#fffbeb",theme_colour: "#d97706",
+    icons: [{ src: "https://flaticon.com", sizes: "512x512", type: "image/png" }]
+};
+var link = document.createElement("link");
+link.rel = "manifest";
+link.href = "data:application/manifest+json," + encodeURIComponent(JSON.stringify(manifest));
+document.head.appendChild(link);
+
+var css = document.createElement("style");
+css.textContent = "*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;-webkit-tap-highlight-colour:transparent}body{background:#fffbeb;colour:#1f2937;padding-bottom:40px}header{background:#fff;border-bottom:2px solid #fde68a;padding:14px 18px;position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center}.logo{font-size:1.3rem;font-weight:800;colour:#d97706}.btn{background:#d97706;colour:#fff;border:none;padding:12px 16px;border-radius:12px;font-weight:700;font-size:1rem;cursor:pointer}.btn:active{transform:scale(0.98)}.wrap{max-width:900px;margin:0 auto;padding:16px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:16px}.card{background:#fff;border:1px solid #fde68a;border-radius:16px;padding:16px;display:flex;flex-direction:column;justify-content:space-between}.w-row{display:flex;gap:6px;margin:12px 0}.w-btn{flex:1;padding:10px 4px;border:1px solid #d1d5db;background:#f9fafb;border-radius:8px;cursor:pointer;font-size:0.9rem}.w-btn.on{background:#fef3c7;border-colour:#d97706;font-weight:700;colour:#b45309}.box{background:#fff;border:2px solid #d97706;border-radius:16px;padding:18px;margin-top:20px}input{width:100%;padding:12px;margin:6px 0 12px;border:1px solid #d1d5db;border-radius:10px;font-size:1rem}";
+document.head.appendChild(css);var items = [{id: 1, name: "Генеральское с прорезью", desc: "Нежное сало с тремя слоями мяса", price: 340, icon: "🥓"},
+    {id: 2, name: "Копченое на вишне", desc: "Ароматное сало горячего копчения", price: 380, icon: "🔥"},
+    {id: 3, name: "Закарпатское в паприке", desc: "Выдержанное в специях и паприке", price: 360, icon: "🌶️"},
+    {id: 4, name: "Соленое с чесноком", desc: "Классический рецепт из погреба", price: 290, icon: "🧄"}
+];
+var weights = {1: 0.5, 2: 0.5, 3: 0.5, 4: 0.5};
+var cart = [];
+
+function el(tag, cls, text) {
+    var d = document.createElement(tag);
+    if (cls) d.className = cls;
+    if (text !== undefined) d.textContent = text;
+    return d;
+}
+
+function draw() {
+    var root = document.getElementById("app");
+    root.innerHTML = "";
+
+    var head = el("header");
+    head.appendChild(el("div", "logo", "🥓 СалоExpress"));
+    var totalQty = cart.reduce(function(s, x) { return s + x.qty; }, 0);
+    var cartBadge = el("button", "btn", "🛒 " + totalQty + " шт.");
+    cartBadge.onclick = function() {
+        var box = document.getElementById("order-box");
+        if (box) box.scrollIntoView({behavior: "smooth"});
+    };
+    head.appendChild(cartBadge);
+    root.appendChild(head);
+
+    var wrap = el("div", "wrap");
+    var title = el("h1", "", "Доставка домашнего сала");
+    title.style.fontSize = "1.5rem";
+    wrap.appendChild(title);
+    var subTitle = el("p", "", "Бесплатная доставка от 600 грн.");subTitle.style.colour = "#6b7280";
+    wrap.appendChild(subTitle);
+
+    var grid = el("div", "grid");
+    items.forEach(function(p) {
+        var card = el("div", "card");
+        var top = el("div");
+        var nameEl = el("div", "", p.icon + " " + p.name);
+        nameEl.style.fontWeight = "700";
+        nameEl.style.fontSize = "1.1rem";
+        top.appendChild(nameEl);
+        var desc = el("p", "", p.desc);desc.style.colour = "#6b7280";
+        desc.style.margin = "6px 0";
+        desc.style.fontSize = "0.9rem";
+        top.appendChild(desc);
+        card.appendChild(top);
+
+        var bot = el("div");
+        var w = weights[p.id];
+        var cost = Math.round(p.price * w);
+        var pr = el("div", "", cost + " грн (" + p.price + " грн/кг)");
+        pr.style.fontWeight = "700";
+        pr.style.fontSize = "1.1rem";
+        bot.appendChild(pr);
+
+        var wRow = el("div", "w-row");
+        [0.3, 0.5, 1].forEach(function(val) {
+            var b = el("button", "w-btn" + (w === val ? " on" : ""), val === 1 ? "1 кг" : (val * 1000) + " г");
+            b.onclick = function() { weights[p.id] = val; draw(); };
+            wRow.appendChild(b);
+        });
+        bot.appendChild(wRow);
+
+        var addBtn = el("button", "btn", "В корзину");
+        addBtn.style.width = "100%";
+        addBtn.onclick = function() {
+            var ex = cart.find(function(x) { return x.id === p.id && x.w === w; });
+            if (ex) ex.qty++; else cart.push({id: p.id, name: p.name, w: w, cost: cost, qty: 1});
+            draw();
+        };
+        bot.appendChild(addBtn);
+        card.appendChild(bot);
+        grid.appendChild(card);
+    });
+    wrap.appendChild(grid);
+
+    if (cart.length > 0) {
+        var box = el("div", "box");
+        box.id = "order-box";
+        box.appendChild(el("h2", "", "Ваш заказ"));
+        var sub = 0;
+        cart.forEach(function(x, idx) {
+            var lineSum = x.cost * x.qty;
+            sub += lineSum;
+            var row = el("div", "", "• " + x.name + " (" + (x.w * 1000) + "г) × " + x.qty + " = " + lineSum + " грн ");
+            row.style.margin = "10px 0";
+            var delB = el("button", "", "✕");delB.style.colour = "#ef4444";
+            delB.style.fontWeight = "700";
+            delB.style.marginLeft = "8px";
+            delB.style.border = "none";
+            delB.style.background = "none";
+            delB.style.cursor = "pointer";
+            delB.onclick = function() { cart.splice(idx, 1); draw(); };
+            row.appendChild(delB);
+            box.appendChild(row);
+        });
+
+        var deliv = sub >= 600 ? 0 : 80;
+        var tot = sub + deliv;
+        var sumInfo = el("p", "", "Доставка: " + (deliv === 0 ? "Бесплатно" : deliv + " грн") + " | Итого: " + tot + " грн");
+        sumInfo.style.fontWeight = "800";
+        sumInfo.style.fontSize = "1.1rem";
+        sumInfo.style.margin = "12px 0";
+        box.appendChild(sumInfo);
+
+        var inpName = el("input"); inpName.placeholder = "Ваше имя";
+        var inpPhone = el("input"); inpPhone.type = "tel"; inpPhone.placeholder = "Телефон (+380...)";
+        var inpAddr = el("input"); inpAddr.placeholder = "Город, улица, дом / отделение почты";
+        box.appendChild(inpName);
+        box.appendChild(inpPhone);
+        box.appendChild(inpAddr);
+
+        var status = el("p", "");
+        status.style.marginBottom = "10px";
+        box.appendChild(status);
+
+        var sendBtn = el("button", "btn", "Оформить заказ");
+        sendBtn.style.width = "100%";sendBtn.onclick = async function() {if (!inpName.value || !inpPhone.value || !inpAddr.value) {status.style.colour = "#dc2626";
+                status.textContent = "Заполните все поля!";
+                return;
+            }
+            sendBtn.disabled = true;
+            sendBtn.textContent = "Отправка...";
+            var nl = String.fromCharCode(10);
+            var lines = cart.map(function(x) { return "- " + x.name + " (" + (x.w * 1000) + "г) × " + x.qty + " = " + (x.cost * x.qty) + " грн"; });
+            var msg = "НОВЫЙ ЗАКАЗ САЛА!" + nl + nl + lines.join(nl) + nl + nl + "Итого: " + tot + " грн" + nl + "Клиент: " + inpName.value + nl + "Телефон: " + inpPhone.value + nl + "Адрес: " + inpAddr.value;
+            var apiUrl = ["https:/", "api.telegram.org", "bot" + TG_BOT_TOKEN.trim(), "sendMessage"].join("/");
+            try {
+                var r = await fetch(apiUrl, {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({chat_id: TG_CHAT_ID.toString().trim(), text: msg})
+                });
+                var res = await r.json();
+                if (!res.ok) throw new Error(res.description);
+                cart = [];
+                alert("Заказ принят! Скоро свяжемся с вами.");draw();} catch (e) {status.style.colour = "#dc2626";
+                status.textContent = "Ошибка: " + e.message;
+                sendBtn.disabled = false;
+                sendBtn.textContent = "Оформить заказ";
+            }
+        };
+        box.appendChild(sendBtn);
+        wrap.appendChild(box);
+    }
+
+    root.appendChild(wrap);
+}
+draw();
+</script>
+</body>
+</html>
